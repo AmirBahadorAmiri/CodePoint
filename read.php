@@ -10,20 +10,25 @@ if (isset($_GET['code_id'])) {
     );
 }
 
-$pageTitle  = $code ? $code['code_title'] : 'کد پیدا نشد';
+// the viewer has nothing to show without a snippet, so a missing or deleted id
+// goes back to the list instead of rendering a page full of empty values
+if ($code === null) {
+    header('Location: index.php');
+    exit;
+}
+
+$codeText   = $code['code_text'];
+$lang       = $code['code_lang'];
+$lineCount  = substr_count($codeText, "\n") + 1;
+$charCount  = strlen($codeText);
+$sizeBytes  = $charCount;
+$sizeLabel  = $sizeBytes >= 1024
+    ? number_format($sizeBytes / 1024, 1) . ' KB'
+    : $sizeBytes . ' B';
+
+$pageTitle  = $code['code_title'];
 $activePage = 'code';
 require 'tools/header.php';
-
-if ($code) {
-    $codeText   = $code['code_text'];
-    $lang       = $code['code_lang'];
-    $lineCount  = substr_count($codeText, "\n") + 1;
-    $charCount  = strlen($codeText);
-    $sizeBytes  = $charCount;
-    $sizeLabel  = $sizeBytes >= 1024
-        ? number_format($sizeBytes / 1024, 1) . ' KB'
-        : $sizeBytes . ' B';
-}
 ?>
 <div class="layout">
 
@@ -76,7 +81,21 @@ if ($code) {
                 <h1 class="badge-title"><?= htmlspecialchars($code['code_title']) ?></h1>
                 <p><?= htmlspecialchars($code['code_description']) ?></p>
             </div>
-            <a class="btn btn-ghost btn-sm" href="index.php">بازگشت به لیست</a>
+            <div class="page-head-actions">
+                <button type="button" class="btn btn-ghost btn-sm" id="edit-code-btn"
+                        data-code-id="<?= (int)$code['code_id'] ?>"
+                        data-code-title="<?= htmlspecialchars($code['code_title'], ENT_QUOTES) ?>"
+                        data-code-lang="<?= htmlspecialchars($lang, ENT_QUOTES) ?>"
+                        data-code-desc="<?= htmlspecialchars($code['code_description'], ENT_QUOTES) ?>">
+                    ویرایش
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-code-btn"
+                        data-code-id="<?= (int)$code['code_id'] ?>"
+                        data-code-title="<?= htmlspecialchars($code['code_title'], ENT_QUOTES) ?>">
+                    حذف
+                </button>
+                <a class="btn btn-ghost btn-sm" href="index.php">بازگشت به لیست</a>
+            </div>
         </div>
 
         <section class="code-shell">
@@ -131,6 +150,9 @@ if ($code) {
     (function () {
         var block = document.getElementById('code-block');
         var select = document.getElementById('lang-select');
+        var editBtn = document.getElementById('edit-code-btn');
+        var deleteBtn = document.getElementById('delete-code-btn');
+        var api = window.codePoint;
 
         function paint() {
             if (typeof hljs === 'undefined' || !block) return;
@@ -164,49 +186,40 @@ if ($code) {
             }).join('\n');
         }
 
-        // navigator.clipboard is undefined outside a secure context, which is exactly
-        // what you get when this site is opened over the LAN (http://192.168.x.x/...)
-        // instead of localhost. execCommand is deprecated but the only option there.
-        function fallbackCopy(text) {
-            var area = document.createElement('textarea');
-            area.value = text;
-            area.setAttribute('readonly', '');
-            area.style.position = 'fixed';
-            area.style.top = '-1000px';
-            document.body.appendChild(area);
-            area.select();
-            var copied = false;
-            try {
-                copied = document.execCommand('copy');
-            } catch (err) {
-                copied = false;
-            }
-            document.body.removeChild(area);
-            return copied;
-        }
-
+        // navigator.clipboard is undefined outside a secure context (LAN access,
+        // not localhost) — the shared helper in header.php owns that fallback
         function wire(btnId, transform) {
             var btn = document.getElementById(btnId);
-            if (!btn) return;
+            if (!btn || !api) return;
             btn.addEventListener('click', function () {
                 var text = block ? block.innerText.replace(/\n$/, '') : '';
-                var payload = transform(text);
-                function report(copied) {
-                    flash(btn, copied);
-                }
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(payload).then(function () {
-                        report(true);
-                    }, function () {
-                        report(fallbackCopy(payload));
-                    });
-                } else {
-                    report(fallbackCopy(payload));
-                }
+                api.clipboard(transform(text), function (ok) {
+                    flash(btn, ok);
+                });
             });
         }
 
         wire('copy-btn', function (t) { return t; });
         wire('copy-lines-btn', withLineNumbers);
+
+        if (editBtn && api) {
+            editBtn.addEventListener('click', function () {
+                api.openEditor({
+                    id: editBtn.dataset.codeId,
+                    title: editBtn.dataset.codeTitle,
+                    lang: editBtn.dataset.codeLang,
+                    description: editBtn.dataset.codeDesc,
+                    // textContent is the snippet byte for byte, which innerText is not
+                    text: block ? block.textContent : '',
+                    returnTo: 'read'
+                });
+            });
+        }
+
+        if (deleteBtn && api) {
+            deleteBtn.addEventListener('click', function () {
+                api.remove(deleteBtn.dataset.codeId, deleteBtn.dataset.codeTitle);
+            });
+        }
     })();
 </script>
