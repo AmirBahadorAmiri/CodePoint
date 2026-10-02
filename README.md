@@ -2,7 +2,7 @@
 
 > 📖 [نسخه فارسی](./README.fa.md)
 
-A Persian (Farsi) code-snippet manager with a fully right-to-left interface — store snippets, search them, browse them by language, and read them with line numbers and syntax highlighting. Plain PHP + MySQL on Apache, no framework, no build step.
+A Persian (Farsi) code-snippet manager with a fully right-to-left interface — store snippets, search them, browse them by language, read them with line numbers and syntax highlighting, and edit or delete them from a custom right-click menu. Plain PHP + MySQL on Apache, no framework, no build step.
 
 ![Screenshot of the snippet list page](./screenshot/screenshot.png)
 
@@ -41,6 +41,16 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 - Syntax highlighting via highlight.js 11.9.0 (github-dark theme) loaded from a CDN, re-applied when you override the language.
 - Sidebar with the snippet's metadata and full description.
 
+### 🖱️ Right-click Menu
+
+- Right-clicking any snippet card opens a custom menu — **copy**, **edit**, **delete** — instead of the browser's default one.
+- A per-card **"⋯" button** opens the same menu, so touch devices without a right-click get the same three actions.
+- Fully keyboard-driven: `↑`/`↓` to walk the items (wrapping around), `Home`/`End` to jump, `Esc` to dismiss. Dismissing returns focus to the button that opened it.
+- The menu is clamped inside the viewport and closes on `Esc`, an outside click, scroll or resize.
+- Edit reuses the "new snippet" dialog in an edit mode, with the title and button text switching to **ویرایش کد** / **ذخیره تغییرات**.
+- Delete asks for confirmation, then always returns to `index.php`.
+- The viewer page carries the same two actions as plain **ویرایش** / **حذف** buttons, so editing is reachable without going back to the list.
+
 ### ⚙️ Interface
 
 - Fully right-to-left layout built with CSS **logical properties** (`margin-inline-*`, `padding-inline`, `border-inline-*`) rather than hard-coded left/right.
@@ -55,6 +65,9 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 - All rendered values pass through `htmlspecialchars()`.
 - `code_id` is cast to `(int)`, so it can never carry SQL.
 - `SQLHelper` wraps connection and query calls in `try/catch` for `mysqli_sql_exception`, which PHP 8.1+ throws by default.
+- Delete is a **POST** through a hidden form, never a GET, so a snippet can never be removed by a crawled or prefetched link.
+- The `return_to` redirect target is whitelisted to `index|read`, so it cannot be turned into an open redirect.
+- The code payload handed to the menu travels in a `data-` attribute with every character escaped and newlines normalised to `LF` before being entity-encoded — a literal `CR` inside an attribute value is rewritten by the HTML parser and would otherwise turn each `CRLF` into a blank line.
 
 ## 🛠 Tech Stack
 
@@ -74,9 +87,9 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 
 ```text
 CodePoint/
-├── index.php               # Home: search, language filter, snippet card list
-├── read.php                # Viewer: line numbers, highlighting, copy buttons
-├── api.php                 # POST endpoint: validates + inserts a new snippet
+├── index.php               # Home: search, language filter, snippet card list, right-click menu
+├── read.php                # Viewer: line numbers, highlighting, copy + edit/delete buttons
+├── api.php                 # POST endpoint: insert / update / delete a snippet
 ├── database.sql            # Schema: CREATE DATABASE + CREATE TABLE codes (+ optional sample data)
 ├── screenshot/
 │   └── screenshot.png      # Screenshot used in this README
@@ -86,10 +99,10 @@ CodePoint/
     └── style.css           # Design system (tokens, layout, components)
 ```
 
-- **`index.php`** — entry point. Reads the search term and active language, builds the `WHERE` clause with escaped values, and renders the card list plus the filter sidebar.
-- **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body.
-- **`api.php`** — form target. Validates that title, language, description and code are all non-empty, escapes all four, inserts, and redirects to `index.php`.
-- **`tools/header.php`** — included by both pages. Set `$pageTitle` and `$activePage` before including it.
+- **`index.php`** — entry point. Reads the search term and active language, builds the `WHERE` clause with escaped values, and renders the card list plus the filter sidebar. Also owns the right-click menu: one delegated `contextmenu` listener, one `click` listener, and a keyboard handler, so a single listener per event serves every card.
+- **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body. A missing snippet redirects to `index.php` instead of rendering a broken page.
+- **`api.php`** — form target for all three actions. `action` selects `insert`, `update` or `delete`; insert and update share the same validation (title, language, description and code all non-empty) and the same four escaped values. Delete takes only a `(int)` id.
+- **`tools/header.php`** — included by both pages. Set `$pageTitle` and `$activePage` before including it. Also holds the shared dialog, the hidden delete form, the toast stack and `window.codePoint` (`openEditor`, `remove`, `copy`, `toast`, `clipboard`), so both pages drive the same editor.
 - **`tools/SQLHelper.php`** — holds the credentials and every query helper. **Edit the connection details here first.**
 
 ## 🚀 Build & Run
