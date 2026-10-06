@@ -494,8 +494,17 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     .navbar-inner, .layout { padding: var(--sp-3); }
     .navbar-inner { gap: var(--sp-3); }
     .nav-links { order: 3; width: 100%; margin: 0; overflow-x: auto; }
-    .navbar-actions { margin-inline-start: auto; }
+    /* four actions no longer fit beside the brand on a phone, so they get a row of
+       their own (flex-basis 100%) and wrap inside it rather than pushing the
+       whole page sideways */
+    .navbar-actions {
+        order: 2; flex: 1 0 100%;
+        margin-inline: 0; justify-content: flex-end; flex-wrap: wrap;
+    }
     .page-head h1 { font-size: 19px; }
+    /* the meta row is a nowrap flex row, so it sets the card's min-content width
+       and pushes it past a 320px viewport; letting it wrap drops that floor */
+    .code-card-meta { flex-wrap: wrap; }
     .code-shell { max-height: none; }
     .code-body, .code-gutter { font-size: 12px; }
     /* toolbar gets cramped on phones: give the title its own row so it stops truncating */
