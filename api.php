@@ -1,6 +1,6 @@
 <?php
 /**
- * Single POST endpoint for every write: insert, update and delete.
+ * Single POST endpoint for every write: insert, update, delete and import.
  * The caller picks the operation with the `action` field.
  * All values are escaped with real_escape_string before being placed in the query.
  */
@@ -22,6 +22,11 @@ if ($action === 'delete') {
     }
     // the snippet is gone, so there is no read page left to go back to
     header('Location: index.php');
+    exit;
+}
+
+if ($action === 'import') {
+    require 'tools/import.php';
     exit;
 }
 

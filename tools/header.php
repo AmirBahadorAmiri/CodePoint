@@ -61,6 +61,26 @@ $activePage = $activePage ?? 'home';
         </nav>
 
         <div class="navbar-actions">
+            <!-- a plain GET link: backup.php only reads, and a download is a GET -->
+            <a class="btn btn-ghost btn-sm" href="backup.php" download title="خروجی گرفتن از همه کدها به صورت JSON">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3v12m0 0 4-4m-4 4-4-4"></path>
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                </svg>
+                خروجی JSON
+            </a>
+
+            <button type="button" class="btn btn-ghost btn-sm" data-open-import
+                    title="بازگردانی از فایل JSON">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 15V3m0 0 4 4m-4-4L8 7"></path>
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                </svg>
+                ورود JSON
+            </button>
+
             <button type="button" class="icon-btn theme-toggle" data-theme-toggle
                     aria-label="تغییر پوسته روشن و تیره" title="تغییر پوسته">
                 <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -135,6 +155,13 @@ $activePage = $activePage ?? 'home';
 <form action="api.php" method="post" id="code-delete-form" hidden>
     <input type="hidden" name="action" value="delete">
     <input type="hidden" name="code_id" id="code-delete-id" value="">
+</form>
+
+<!-- import is a multipart POST: a JSON payload has to travel as a file, and a
+     GET would let a link quietly rewrite the database -->
+<form action="api.php" method="post" enctype="multipart/form-data" id="backup-import-form" hidden>
+    <input type="hidden" name="action" value="import">
+    <input type="file" name="backup_file" id="backup-import-file" accept=".json,application/json" hidden>
 </form>
 
 <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
@@ -291,6 +318,73 @@ $activePage = $activePage ?? 'home';
                 }
             });
         }
+
+        // a picker cannot be cancelled programmatically, so the button opens it and
+        // the form is only submitted from the change handler once a file is chosen
+        var importButton = document.querySelector('[data-open-import]');
+        var importForm = document.getElementById('backup-import-form');
+        var importInput = document.getElementById('backup-import-file');
+
+        if (importButton && importForm && importInput) {
+            importButton.addEventListener('click', function () {
+                importInput.click();
+            });
+
+            importInput.addEventListener('change', function () {
+                if (!importInput.files || !importInput.files.length) return;
+
+                var name = importInput.files[0].name;
+                var ok = window.confirm(
+                    'فایل «' + name + '» وارد شود؟\n\n'
+                    + 'کدهایی که در فایل هستند به‌روزرسانی می‌شوند و کدهای جدید اضافه.\n'
+                    + 'هیچ کدی پاک نمی‌شود.'
+                );
+
+                if (ok) {
+                    importForm.submit();
+                    return;
+                }
+
+                // a cancelled picker can be reused only after its value is cleared
+                importInput.value = '';
+            });
+        }
+
+        /* ---------- reporting ---------- */
+
+        // api.php redirects back with ?import=…, so the outcome of an import is
+        // announced here rather than on a page of its own
+        (function reportImport() {
+            var params = new URLSearchParams(window.location.search);
+            var state = params.get('import');
+            if (!state) return;
+
+            if (state === 'failed') {
+                var reasons = {
+                    nofile: 'فایلی انتخاب نشد.',
+                    upload: 'ارسال فایل ناموفق بود.',
+                    toolarge: 'فایل از حجم مجاز سرور بزرگ‌تر است.',
+                    empty: 'فایل خالی است.',
+                    badjson: 'فایل، JSON معتبر نیست.',
+                    badschema: 'ساختار فایل با بکاپ CodePoint نمی‌خواند.',
+                    norows: 'هیچ کد قابل‌استفاده‌ای در فایل نبود.',
+                    database: 'ذخیره در دیتابیس ناموفق بود؛ چیزی تغییر نکرد.'
+                };
+                toast(reasons[params.get('reason')] || 'ورود فایل ناموفق بود.', 'error');
+                return;
+            }
+
+            var inserted = parseInt(params.get('inserted'), 10) || 0;
+            var updated = parseInt(params.get('updated'), 10) || 0;
+            var skipped = parseInt(params.get('skipped'), 10) || 0;
+
+            var parts = [];
+            if (inserted) parts.push(inserted + ' کد جدید اضافه شد');
+            if (updated) parts.push(updated + ' کد به‌روزرسانی شد');
+            if (skipped) parts.push(skipped + ' ردیف نامعتبر رد شد');
+
+            toast(parts.length ? parts.join('، ') + '.' : 'فایل خالی بود.', parts.length ? 'ok' : 'error');
+        })();
 
         dialog.addEventListener('click', function (event) {
             if (event.target === dialog) dialog.close();
