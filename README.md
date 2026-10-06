@@ -2,7 +2,7 @@
 
 > 📖 [نسخه فارسی](./README.fa.md)
 
-A Persian (Farsi) code-snippet manager with a fully right-to-left interface — store snippets, search them, browse them by language, read them with line numbers and syntax highlighting, and edit or delete them from a custom right-click menu. Plain PHP + MySQL on Apache, no framework, no build step.
+A Persian (Farsi) code-snippet manager with a fully right-to-left interface — store snippets, search them, browse them by language, read them with line numbers and syntax highlighting, and edit or delete them from a custom right-click menu. Light and dark themes, plain PHP + MySQL on Apache, no framework, no build step.
 
 ![Screenshot of the snippet list page](./screenshot/screenshot.png)
 
@@ -38,7 +38,7 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 
 - Dedicated `read.php?code_id=N` page with a sticky toolbar: snippet title, language override dropdown, **copy** and **copy with line numbers** buttons.
 - Line-number gutter that stays aligned with the highlighted code, and a horizontal scroll area for long lines.
-- Syntax highlighting via highlight.js 11.9.0 (github-dark theme) loaded from a CDN, re-applied when you override the language.
+- Syntax highlighting via highlight.js 11.11.2, re-applied when you override the language. The editor wears GitHub's own syntax themes in both directions — `github` for light, `github-dark` for dark — and `tools/style.css` matches the toolbar, gutter and borders to each palette so the shell never looks bolted on.
 - Sidebar with the snippet's metadata and full description.
 
 ### 🖱️ Right-click Menu
@@ -55,6 +55,9 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 
 - Fully right-to-left layout built with CSS **logical properties** (`margin-inline-*`, `padding-inline`, `border-inline-*`) rather than hard-coded left/right.
 - Hand-written design system in a single stylesheet — CSS custom properties for color, spacing, radius and shadows, with a documented class contract in the file header.
+- **Dark mode** from a navbar toggle: it follows the OS setting until you pick a side, then your choice survives every reload. The whole palette is one block of `light-dark()` pairs switched by `color-scheme`, so there is no second stylesheet to keep in sync.
+- The toggle ships both a sun and a moon icon and lets CSS reveal one, so the button is already correct on the very first paint — a stored theme is applied by a blocking script in `<head>`, and no flash of the wrong theme is possible.
+- The code viewer keeps its editor look in both themes and gains a border in dark mode so it stays separated from the page.
 - "New snippet" form lives in a native `<dialog>` modal, so the sidebar keeps its scroll room.
 - Responsive: two-column layout on desktop, stacked at `1024px`, toolbar wraps and code font shrinks at `640px`.
 - Vazirmatn as the Persian UI font, falling back to `system-ui` / `Tahoma`.
@@ -77,7 +80,8 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 | Database | MySQL / MariaDB 10.4 (`utf8mb4_unicode_ci`, InnoDB) |
 | Web server | Apache via XAMPP |
 | DB access | `mysqli`, wrapped in `tools/SQLHelper.php` |
-| Syntax highlighting | highlight.js 11.9.0 (CDN) |
+| Syntax highlighting | highlight.js 11.11.2, `github` + `github-dark` themes |
+| Themes | `color-scheme` + one block of `light-dark()` pairs, no second stylesheet |
 | Font | Vazirmatn (CDN) |
 | Styling | Hand-written CSS design system, CSS logical properties |
 | Frontend | Vanilla JS, native `<dialog>` |
@@ -95,14 +99,15 @@ CodePoint/
 │   └── screenshot.png      # Screenshot used in this README
 └── tools/
     ├── SQLHelper.php       # DB layer: escape(), fetchAll(), fetchOne(), sendQuery()
-    ├── header.php          # Shared partial: <head>, navbar, new-snippet <dialog>
-    └── style.css           # Design system (tokens, layout, components)
+    ├── header.php          # Shared partial: <head>, no-flash theme script, navbar, new-snippet <dialog>
+    └── style.css           # Design system (tokens, light-dark() pairs, layout, components)
 ```
 
 - **`index.php`** — entry point. Reads the search term and active language, builds the `WHERE` clause with escaped values, and renders the card list plus the filter sidebar. Also owns the right-click menu: one delegated `contextmenu` listener, one `click` listener, and a keyboard handler, so a single listener per event serves every card.
 - **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body. A missing snippet redirects to `index.php` instead of rendering a broken page.
 - **`api.php`** — form target for all three actions. `action` selects `insert`, `update` or `delete`; insert and update share the same validation (title, language, description and code all non-empty) and the same four escaped values. Delete takes only a `(int)` id.
 - **`tools/header.php`** — included by both pages. Set `$pageTitle` and `$activePage` before including it. Also holds the shared dialog, the hidden delete form, the toast stack and `window.codePoint` (`openEditor`, `remove`, `copy`, `toast`, `clipboard`), so both pages drive the same editor.
+- **`tools/style.css`** — the whole palette lives in one `:root` block as `light-dark()` pairs, so a single `color-scheme` key decides which side of every pair is used. **The `--viewer-*` tokens are pinned to the two highlight.js themes** (`github` and `github-dark`); change one and you have to change the other.
 - **`tools/SQLHelper.php`** — holds the credentials and every query helper. **Edit the connection details here first.**
 
 ## 🚀 Build & Run
