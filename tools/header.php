@@ -18,6 +18,22 @@ $activePage = $activePage ?? 'home';
 
     <title><?= htmlspecialchars($pageTitle) ?> | CodePoint</title>
 
+    <script>
+        /* a blocking script here, above every stylesheet, is the only way to get the
+           stored theme onto <html> before the first paint — any later and every reload
+           flashes the light page for a frame */
+        (function () {
+            try {
+                var saved = localStorage.getItem('codepoint-theme');
+                if (saved === 'light' || saved === 'dark') {
+                    document.documentElement.dataset.theme = saved;
+                }
+            } catch (err) {
+                /* storage is blocked in private mode; the OS preference still applies */
+            }
+        })();
+    </script>
+
     <link rel="shortcut icon" href="images/codepoint.png" type="image/x-icon"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
     <link rel="stylesheet" href="tools/style.css">
@@ -45,6 +61,19 @@ $activePage = $activePage ?? 'home';
         </nav>
 
         <div class="navbar-actions">
+            <button type="button" class="icon-btn theme-toggle" data-theme-toggle
+                    aria-label="تغییر پوسته روشن و تیره" title="تغییر پوسته">
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"></path>
+                </svg>
+            </button>
+
             <button type="button" class="btn btn-primary btn-sm" data-open-code-dialog>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
@@ -243,6 +272,25 @@ $activePage = $activePage ?? 'home';
         document.querySelectorAll('[data-close-code-dialog]').forEach(function (btn) {
             btn.addEventListener('click', function () { dialog.close(); });
         });
+
+        /* one click flips the theme and remembers it. while nothing is stored the
+           operating system decides both the current theme and what a flip means */
+        var themeToggle = document.querySelector('[data-theme-toggle]');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var root = document.documentElement;
+                var isDark = root.dataset.theme
+                    ? root.dataset.theme === 'dark'
+                    : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var next = isDark ? 'light' : 'dark';
+                root.dataset.theme = next;
+                try {
+                    localStorage.setItem('codepoint-theme', next);
+                } catch (err) {
+                    /* nothing to remember it with; the theme still holds for this page */
+                }
+            });
+        }
 
         dialog.addEventListener('click', function (event) {
             if (event.target === dialog) dialog.close();

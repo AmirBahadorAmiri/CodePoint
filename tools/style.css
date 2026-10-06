@@ -5,8 +5,9 @@
    --------------------------------------------------------------------------
    CLASS CONTRACT
    Layout    : .layout .sidebar .main .page-head .page-head-actions .breadcrumb
-   Navbar    : .navbar .navbar-inner .brand .brand-mark .brand-text
+Navbar    : .navbar .navbar-inner .brand .brand-mark .brand-text
                 .nav-links .nav-link(.is-active) .navbar-actions
+   Theme     : .theme-toggle .icon-sun .icon-moon
    Buttons   : .btn .btn-primary .btn-ghost .btn-danger .btn-sm
                 .btn.is-copied .icon-btn
    Forms     : .field .field-label .search-form .segmented .submit-row
@@ -25,25 +26,48 @@
 
 /* ---------- Tokens ---------- */
 :root {
-    --bg: #f6f7f9;
-    --surface: #ffffff;
-    --surface-alt: #f9fafb;
-    --border: #e5e7eb;
-    --border-strong: #d1d5db;
-    --text: #0f172a;
-    --muted: #64748b;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --primary-soft: #eff6ff;
-    --success: #16a34a;
-    --danger: #dc2626;
-    --danger-hover: #b91c1c;
-    --danger-soft: #fef2f2;
+    color-scheme: light dark;
+
+    /* one colour per line, light value first and dark value second. which of the
+       two is used is decided by `color-scheme` alone (see the Theme block), so
+       there is no second palette anywhere that could drift out of sync. */
+    --bg: light-dark(#f6f7f9, #0b1220);
+    --surface: light-dark(#ffffff, #131c2b);
+    --surface-alt: light-dark(#f9fafb, #1c2739);
+    --border: light-dark(#e5e7eb, #243044);
+    --border-strong: light-dark(#d1d5db, #33415a);
+    --text: light-dark(#0f172a, #e2e8f0);
+    --muted: light-dark(#64748b, #94a3b8);
+    --faint: light-dark(#94a3b8, #7c8a9e);
+    --primary: light-dark(#2563eb, #60a5fa);
+    --primary-hover: light-dark(#1d4ed8, #93c5fd);
+    --primary-soft: light-dark(#eff6ff, rgba(96, 165, 250, .15));
+    --success: light-dark(#16a34a, #4ade80);
+    --danger: light-dark(#dc2626, #f87171);
+    --danger-hover: light-dark(#b91c1c, #fca5a5);
+    --danger-soft: light-dark(#fef2f2, rgba(248, 113, 113, .16));
+    /* the dark accents are light colours, so white text on them would sit around
+       2:1 — every solid fill needs this foreground instead of a hardcoded #fff */
+    --on-accent: light-dark(#ffffff, #0b1220);
+
+    /* the code viewer sits next to the two highlight.js themes read.php loads, so
+       its surfaces are hand-matched to the GitHub Light / GitHub Dark palettes */
+    --viewer-bg: light-dark(#ffffff, #0d1117);
+    --viewer-bar: light-dark(#f6f8fa, #161b22);
+    --viewer-bar-line: light-dark(#d0d7de, #30363d);
+    --viewer-gutter: light-dark(#ffffff, #0d1117);
+    --viewer-gutter-line: light-dark(#eaeef2, #21262d);
+    --viewer-gutter-fg: light-dark(#8c959f, #6e7681);
+    --viewer-fg: light-dark(#24292e, #c9d1d9);
+    --viewer-fg-dim: light-dark(#6e7781, #8b949e);
+    --viewer-hover: light-dark(#eaeef2, #21262d);
+    --viewer-hover-strong: light-dark(#d0d7de, #30363d);
+    --viewer-accent: light-dark(#0969da, #58a6ff);
 
     --radius: 12px;
     --radius-sm: 8px;
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
-    --shadow-md: 0 4px 16px rgba(15, 23, 42, .08);
+    --shadow-sm: light-dark(0 1px 2px rgba(15, 23, 42, .06), 0 1px 2px rgba(0, 0, 0, .45));
+    --shadow-md: light-dark(0 4px 16px rgba(15, 23, 42, .08), 0 10px 30px rgba(0, 0, 0, .55));
 
     --sp-1: 4px;
     --sp-2: 8px;
@@ -54,6 +78,16 @@
 
     --font-sans: Vazirmatn, system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
     --font-mono: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+}
+
+/* ---------- Theme ---------- */
+/* the switch is one property. an explicit choice on <html> pins the page; with
+   no choice at all the media query hands the decision to the operating system. */
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) { color-scheme: dark; }
 }
 
 /* ---------- Base ---------- */
@@ -84,7 +118,7 @@ h1, h2, h3 { margin: 0; line-height: 1.35; font-weight: 700; }
 /* ---------- Navbar ---------- */
 .navbar {
     position: sticky; top: 0; z-index: 50;
-    background: rgba(255, 255, 255, .88);
+    background: light-dark(rgba(255, 255, 255, .88), rgba(19, 28, 43, .82));
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
 }
@@ -128,17 +162,17 @@ h1, h2, h3 { margin: 0; line-height: 1.35; font-weight: 700; }
 }
 .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary { background: var(--primary); color: var(--on-accent); }
 .btn-primary:hover { background: var(--primary-hover); text-decoration: none; }
 
 .btn-ghost { background: var(--surface); color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: var(--surface-alt); color: var(--text); text-decoration: none; }
 
-.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger { background: var(--danger); color: var(--on-accent); }
 .btn-danger:hover { background: var(--danger-hover); text-decoration: none; }
 
 .btn-sm { padding: 5px 10px; font-size: 13px; }
-.btn.is-copied { background: var(--success); border-color: var(--success); color: #fff; }
+.btn.is-copied { background: var(--success); border-color: var(--success); color: var(--on-accent); }
 
 .icon-btn {
     display: inline-grid; place-items: center;
@@ -150,6 +184,21 @@ h1, h2, h3 { margin: 0; line-height: 1.35; font-weight: 700; }
 .icon-btn:hover { background: var(--surface-alt); color: var(--text); }
 .icon-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
+/* both icons ship in the markup and CSS reveals one, so the button already shows
+   the right one on the first paint — no script, no wrong-icon flash */
+.theme-toggle { background: var(--surface); border-color: var(--border); }
+.theme-toggle:hover { background: var(--surface-alt); border-color: var(--border-strong); color: var(--text); }
+.theme-toggle svg { width: 16px; height: 16px; }
+.theme-toggle .icon-sun { display: none; }
+
+html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) .theme-toggle .icon-sun { display: block; }
+    html:not([data-theme="light"]) .theme-toggle .icon-moon { display: none; }
+}
+
 /* ---------- Modal ---------- */
 dialog.modal {
     width: min(620px, calc(100% - 32px));
@@ -157,7 +206,7 @@ dialog.modal {
     background: var(--surface); color: var(--text);
     box-shadow: var(--shadow-md);
 }
-dialog.modal::backdrop { background: rgba(15, 23, 42, .45); }
+dialog.modal::backdrop { background: light-dark(rgba(15, 23, 42, .45), rgba(2, 6, 15, .72)); }
 .modal-head {
     display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
     padding: var(--sp-4); border-bottom: 1px solid var(--border);
@@ -215,7 +264,7 @@ dialog.modal::backdrop { background: rgba(15, 23, 42, .45); }
     background: var(--surface);
     border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
 }
-.field::placeholder { color: #94a3b8; }
+.field::placeholder { color: var(--faint); }
 .field:focus {
     outline: none;
     border-color: var(--primary);
@@ -257,7 +306,7 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     background: var(--surface-alt); border: 1px solid var(--border);
     border-radius: 999px; color: var(--muted);
 }
-.filter-item.is-active .filter-count { background: #fff; border-color: var(--primary-soft); color: var(--primary); }
+.filter-item.is-active .filter-count { background: light-dark(#fff, var(--surface)); border-color: var(--primary-soft); color: var(--primary); }
 
 /* ---------- Code list cards ---------- */
 .code-list { display: grid; gap: var(--sp-3); }
@@ -281,7 +330,7 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     margin: 0; color: var(--muted); font-size: 14px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.code-card-meta { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); font-size: 12px; color: #94a3b8; }
+.code-card-meta { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); font-size: 12px; color: var(--faint); }
 
 /* a menu button may not live inside an <a>, so the anchor keeps its ::after
    stretched over the card: the whole card stays clickable, the button sits above */
@@ -330,7 +379,7 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
 
 .toast {
     padding: 9px 16px;
-    font-size: 14px; font-weight: 500; color: #fff;
+    font-size: 14px; font-weight: 500; color: var(--bg);
     background: var(--text); border-radius: 999px;
     box-shadow: var(--shadow-md);
     animation: toast-in .18s ease-out;
@@ -349,12 +398,13 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     border-radius: 999px;
     background: var(--surface-alt); border: 1px solid var(--border); color: var(--muted);
 }
-.badge-lang { background: var(--primary-soft); border-color: #dbeafe; color: var(--primary); text-transform: uppercase; letter-spacing: .03em; }
+.badge-lang { background: var(--primary-soft); border-color: light-dark(#dbeafe, rgba(96, 165, 250, .32)); color: var(--primary); text-transform: uppercase; letter-spacing: .03em; }
 .badge-title { font-size: 20px; }
 
 /* ---------- Code viewer ---------- */
 .code-shell {
-    background: #0f172a;
+    background: var(--viewer-bg);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow-md);
@@ -367,29 +417,29 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     position: sticky; top: 0; z-index: 2;
     display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
     padding: var(--sp-2) var(--sp-3);
-    background: #1e293b; border-bottom: 1px solid #334155;
+    background: var(--viewer-bar); border-bottom: 1px solid var(--viewer-bar-line);
     font-family: var(--font-sans); direction: rtl;
 }
 .code-toolbar-title {
     display: flex; align-items: center; gap: var(--sp-2);
-    font-size: 13px; font-weight: 600; color: #e2e8f0;
+    font-size: 13px; font-weight: 600; color: var(--viewer-fg);
     min-width: 0;
 }
 .code-toolbar-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .code-toolbar-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.code-toolbar .icon-btn { color: #94a3b8; }
-.code-toolbar .icon-btn:hover { background: #334155; color: #fff; }
-.code-toolbar .icon-btn:focus-visible { outline-color: #60a5fa; }
-.code-toolbar .btn-ghost { background: #334155; color: #e2e8f0; border-color: #475569; }
-.code-toolbar .btn-ghost:hover { background: #475569; color: #fff; }
-.code-toolbar .btn.is-copied { background: var(--success); border-color: var(--success); color: #fff; }
-.code-toolbar .btn.is-failed { background: var(--danger); border-color: var(--danger); color: #fff; }
+.code-toolbar .icon-btn { color: var(--viewer-fg-dim); }
+.code-toolbar .icon-btn:hover { background: var(--viewer-hover); color: var(--viewer-fg); }
+.code-toolbar .icon-btn:focus-visible { outline-color: var(--viewer-accent); }
+.code-toolbar .btn-ghost { background: var(--viewer-hover); color: var(--viewer-fg); border-color: var(--viewer-bar-line); }
+.code-toolbar .btn-ghost:hover { background: var(--viewer-hover-strong); color: var(--viewer-fg); }
+.code-toolbar .btn.is-copied { background: var(--success); border-color: var(--success); color: var(--on-accent); }
+.code-toolbar .btn.is-failed { background: var(--danger); border-color: var(--danger); color: var(--on-accent); }
 .code-toolbar .field-dark {
     width: auto; padding: 5px 8px; font-size: 12px;
-    background: #0f172a; color: #e2e8f0;
-    border-color: #334155; border-radius: 6px;
+    background: var(--viewer-gutter); color: var(--viewer-fg);
+    border-color: var(--viewer-bar-line); border-radius: 6px;
 }
-.code-toolbar .field-dark:focus { border-color: #60a5fa; box-shadow: none; }
+.code-toolbar .field-dark:focus { border-color: var(--viewer-accent); box-shadow: none; }
 
 /* horizontal scroller: long lines scroll, gutter stays put */
 .code-scroll { display: flex; align-items: stretch; }
@@ -397,9 +447,9 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
 .code-gutter {
     flex: 0 0 auto;
     padding: 12px 10px;
-    background: #0b1220;
-    border-inline-end: 1px solid #1e293b;
-    color: #475569;
+    background: var(--viewer-gutter);
+    border-inline-end: 1px solid var(--viewer-gutter-line);
+    color: var(--viewer-gutter-fg);
     font-family: var(--font-mono); font-size: 13px; line-height: 1.65;
     text-align: right; user-select: none;
 }
@@ -413,9 +463,12 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     padding: 12px 14px;
     margin: 0;
     font-family: var(--font-mono); font-size: 13px; line-height: 1.65;
-    color: #e2e8f0;
+    color: var(--viewer-fg);
 }
 .code-body code { font: inherit; background: none; padding: 0; white-space: pre; }
+/* outranks the theme's own `pre code.hljs` rule so the shell keeps one background
+   and only the token colours come from GitHub Light / GitHub Dark */
+.code-body code.hljs { background: transparent; }
 
 /* ---------- Meta list ---------- */
 .meta-list { display: flex; flex-direction: column; gap: var(--sp-2); }

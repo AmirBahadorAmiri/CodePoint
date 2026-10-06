@@ -144,8 +144,12 @@ require 'tools/header.php';
 
 </div>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- GitHub's own syntax themes, straight from highlight.js. Both links ship in
+     the markup and pickTheme() below toggles them with media="not all", which is
+     the only thing that actually disables a stylesheet. -->
+<link rel="stylesheet" id="hljs-light-theme" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/styles/github.min.css">
+<link rel="stylesheet" id="hljs-dark-theme" media="not all" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.2/highlight.min.js"></script>
 <script>
     (function () {
         var block = document.getElementById('code-block');
@@ -153,6 +157,21 @@ require 'tools/header.php';
         var editBtn = document.getElementById('edit-code-btn');
         var deleteBtn = document.getElementById('delete-code-btn');
         var api = window.codePoint;
+
+        function pickTheme() {
+            var root = document.documentElement;
+            var dark = root.dataset.theme
+                ? root.dataset.theme === 'dark'
+                : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.getElementById('hljs-' + (dark ? 'dark' : 'light') + '-theme').media = 'all';
+            document.getElementById('hljs-' + (dark ? 'light' : 'dark') + '-theme').media = 'not all';
+        }
+        pickTheme();
+
+        // header.php's handler is registered first, so it has already written
+        // data-theme by the time this one runs
+        var themeToggle = document.querySelector('[data-theme-toggle]');
+        if (themeToggle) themeToggle.addEventListener('click', pickTheme);
 
         function paint() {
             if (typeof hljs === 'undefined' || !block) return;
