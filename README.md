@@ -51,6 +51,15 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 - Delete asks for confirmation, then always returns to `index.php`.
 - The viewer page carries the same two actions as plain **ویرایش** / **حذف** buttons, so editing is reachable without going back to the list.
 
+### 💾 JSON Backup
+
+- **خروجی JSON** in the navbar downloads every snippet as a single file: `{ format, version, exported, count, snippets: [...] }`, with `code_id` kept on each row so the file can be merged back rather than blindly appended.
+- **ورود JSON** in the navbar picks a file, asks for confirmation, and reports the outcome in a toast: how many were added, how many updated, how many rows were rejected.
+- Import **merges by `code_id`** — an id that already exists gets updated, a new one gets inserted. **Nothing is ever deleted**, so importing an old backup cannot wipe newer snippets.
+- A row is skipped if any of its four fields is missing or empty; the count shows up in the toast so a partial import is never silent.
+- The whole batch runs in one transaction, so a failure part-way rolls the database back instead of leaving a half-imported table.
+- The export is a `GET` (it only reads); the import is a `POST` behind a file picker.
+
 ### ⚙️ Interface
 
 - Fully right-to-left layout built with CSS **logical properties** (`margin-inline-*`, `padding-inline`, `border-inline-*`) rather than hard-coded left/right.
@@ -59,7 +68,7 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 - The toggle ships both a sun and a moon icon and lets CSS reveal one, so the button is already correct on the very first paint — a stored theme is applied by a blocking script in `<head>`, and no flash of the wrong theme is possible.
 - The code viewer keeps its editor look in both themes and gains a border in dark mode so it stays separated from the page.
 - "New snippet" form lives in a native `<dialog>` modal, so the sidebar keeps its scroll room.
-- Responsive: two-column layout on desktop, stacked at `1024px`, toolbar wraps and code font shrinks at `640px`.
+- Responsive: two-column layout on desktop, stacked at `1024px`, toolbar wraps and code font shrinks at `640px`. Below `640px` the four navbar actions drop to a row of their own instead of pushing the page sideways.
 - Vazirmatn as the Persian UI font, falling back to `system-ui` / `Tahoma`.
 
 ### 🔒 Safety
@@ -70,6 +79,9 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 - `SQLHelper` wraps connection and query calls in `try/catch` for `mysqli_sql_exception`, which PHP 8.1+ throws by default.
 - Delete is a **POST** through a hidden form, never a GET, so a snippet can never be removed by a crawled or prefetched link.
 - The `return_to` redirect target is whitelisted to `index|read`, so it cannot be turned into an open redirect.
+- **Import never deletes.** It merges by `code_id`, so restoring an older backup updates the rows it mentions and inserts the rest, and cannot remove a snippet that is newer than the file.
+- The imported file is untrusted input, so it goes through **prepared statements with bound parameters** rather than the escape-then-interpolate path the other actions use, and every field is checked for type and emptiness before it reaches a query.
+- The whole import runs in one transaction and rolls back on any failure, so a malformed row in the middle of a large file cannot leave the table half-written.
 - The code payload handed to the menu travels in a `data-` attribute with every character escaped and newlines normalised to `LF` before being entity-encoded — a literal `CR` inside an attribute value is rewritten by the HTML parser and would otherwise turn each `CRLF` into a blank line.
 
 ## 🛠 Tech Stack
@@ -93,20 +105,24 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 CodePoint/
 ├── index.php               # Home: search, language filter, snippet card list, right-click menu
 ├── read.php                # Viewer: line numbers, highlighting, copy + edit/delete buttons
-├── api.php                 # POST endpoint: insert / update / delete a snippet
+├── api.php                 # POST endpoint: insert / update / delete / import
+├── backup.php              # GET endpoint: exports every snippet as a JSON download
 ├── database.sql            # Schema: CREATE DATABASE + CREATE TABLE codes (+ optional sample data)
 ├── screenshot/
 │   └── screenshot.png      # Screenshot used in this README
 └── tools/
     ├── SQLHelper.php       # DB layer: escape(), fetchAll(), fetchOne(), sendQuery()
-    ├── header.php          # Shared partial: <head>, no-flash theme script, navbar, new-snippet <dialog>
+    ├── header.php          # Shared partial: <head>, no-flash theme script, navbar, dialogs, toasts
+    ├── import.php          # The `import` action: validates the uploaded JSON, merges by code_id
     └── style.css           # Design system (tokens, light-dark() pairs, layout, components)
 ```
 
 - **`index.php`** — entry point. Reads the search term and active language, builds the `WHERE` clause with escaped values, and renders the card list plus the filter sidebar. Also owns the right-click menu: one delegated `contextmenu` listener, one `click` listener, and a keyboard handler, so a single listener per event serves every card.
 - **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body. A missing snippet redirects to `index.php` instead of rendering a broken page.
-- **`api.php`** — form target for all three actions. `action` selects `insert`, `update` or `delete`; insert and update share the same validation (title, language, description and code all non-empty) and the same four escaped values. Delete takes only a `(int)` id.
-- **`tools/header.php`** — included by both pages. Set `$pageTitle` and `$activePage` before including it. Also holds the shared dialog, the hidden delete form, the toast stack and `window.codePoint` (`openEditor`, `remove`, `copy`, `toast`, `clipboard`), so both pages drive the same editor.
+- **`api.php`** — form target for every write. `action` selects `insert`, `update`, `delete` or `import`; insert and update share the same validation (title, language, description and code all non-empty) and the same four escaped values. Delete takes only a `(int)` id. Import delegates to `tools/import.php`.
+- **`backup.php`** — the export. Reads every row, wraps it in a versioned envelope and sends it as a download with `Content-Disposition: attachment`. A `GET` is correct here: it only reads.
+- **`tools/import.php`** — included by `api.php` for the `import` action. Uses prepared statements (not the escape-then-interpolate path the other actions use), since the data arrives from an untrusted file. Validates the envelope, then merges each row by `code_id` inside a single transaction.
+- **`tools/header.php`** — included by both pages. Set `$pageTitle` and `$activePage` before including it. Also holds the shared dialog, the hidden delete form, the hidden import form, the toast stack and `window.codePoint` (`openEditor`, `remove`, `copy`, `toast`, `clipboard`), so both pages drive the same editor.
 - **`tools/style.css`** — the whole palette lives in one `:root` block as `light-dark()` pairs, so a single `color-scheme` key decides which side of every pair is used. **The `--viewer-*` tokens are pinned to the two highlight.js themes** (`github` and `github-dark`); change one and you have to change the other.
 - **`tools/SQLHelper.php`** — holds the credentials and every query helper. **Edit the connection details here first.**
 
