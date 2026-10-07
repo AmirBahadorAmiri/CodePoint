@@ -26,6 +26,50 @@ $sizeLabel  = $sizeBytes >= 1024
     ? number_format($sizeBytes / 1024, 1) . ' KB'
     : $sizeBytes . ' B';
 
+// the highlight.js bundle only carries its "common" grammars (~36), so the picker
+// offers these and the script at the bottom of the page fetches whatever it misses
+// from the same release — cdnjs publishes no standalone grammar files
+$langGroups = [
+    'وب و نشانه‌گذاری' => [
+        'html', 'xml', 'css', 'scss', 'less', 'stylus', 'haml', 'twig', 'handlebars',
+        'django', 'php-template', 'markdown', 'asciidoc', 'latex', 'xquery', 'http',
+    ],
+    'اسکریپت' => [
+        'javascript', 'typescript', 'python', 'ruby', 'php', 'perl', 'lua', 'r',
+        'matlab', 'julia', 'scala', 'kotlin', 'groovy', 'clojure', 'haskell', 'elixir',
+        'erlang', 'lisp', 'scheme', 'ocaml', 'fsharp', 'nim', 'coffeescript', 'elm',
+        'powershell', 'awk', 'vim',
+    ],
+    'کامپایلی و سیستمی' => [
+        'c', 'cpp', 'csharp', 'vbnet', 'java', 'swift', 'dart', 'go', 'rust',
+        'objectivec', 'arduino', 'smali', 'd', 'fortran', 'ada', 'smalltalk',
+        'x86asm', 'llvm', 'wasm', 'glsl', 'verilog', 'vhdl',
+    ],
+    'داده و پیکربندی' => [
+        'json', 'yaml', 'ini', 'properties', 'sql', 'pgsql', 'graphql', 'protobuf',
+        'thrift', 'diff', 'dns', 'accesslog', 'gherkin',
+    ],
+    'ترمینال و زیرساخت' => [
+        'bash', 'shell', 'dos', 'makefile', 'cmake', 'apache', 'nginx', 'dockerfile',
+        'gradle', 'nix',
+    ],
+    'سایر' => ['excel', 'plaintext'],
+];
+
+// only the entries whose grammar name is uglier than the label people expect
+$langLabels = [
+    'csharp' => 'C#', 'cpp' => 'C++', 'fsharp' => 'F#', 'vbnet' => 'VB.NET',
+    'objectivec' => 'Objective-C', 'php-template' => 'PHP Template',
+    'html' => 'HTML', 'xml' => 'XML', 'css' => 'CSS', 'scss' => 'SCSS', 'sql' => 'SQL',
+    'pgsql' => 'PostgreSQL', 'json' => 'JSON', 'yaml' => 'YAML', 'ini' => 'INI',
+    'php' => 'PHP', 'graphql' => 'GraphQL', 'http' => 'HTTP', 'dns' => 'DNS',
+    'apache' => 'Apache', 'nginx' => 'Nginx', 'cmake' => 'CMake', 'nix' => 'Nix',
+    'wasm' => 'WebAssembly', 'dockerfile' => 'Dockerfile', 'gradle' => 'Gradle',
+    'x86asm' => 'x86 ASM', 'llvm' => 'LLVM', 'glsl' => 'GLSL', 'vhdl' => 'VHDL',
+    'latex' => 'LaTeX', 'xquery' => 'XQuery', 'asciidoc' => 'AsciiDoc', 'haml' => 'Haml',
+    'properties' => 'Java Properties', 'plaintext' => 'بدون هایلایت',
+];
+
 $pageTitle  = $code['code_title'];
 $activePage = 'code';
 require 'tools/header.php';
@@ -108,11 +152,15 @@ require 'tools/header.php';
 
                 <div class="code-toolbar-actions">
                     <label class="sr-only" for="lang-select">زبان کد</label>
-                    <select id="lang-select" class="field field-dark" title="زبان کد">
+                    <select id="lang-select" class="field field-dark" dir="ltr" title="زبان کد">
                         <option value="<?= htmlspecialchars(strtolower($lang)) ?>" selected><?= htmlspecialchars($lang) ?></option>
-                        <?php foreach (['php', 'javascript', 'typescript', 'java', 'kotlin', 'python', 'html', 'css', 'sql', 'bash', 'json', 'plaintext'] as $option) {
-                            if ($option === strtolower($lang)) continue; ?>
-                            <option value="<?= $option ?>"><?= $option ?></option>
+                        <?php foreach ($langGroups as $groupLabel => $options) { ?>
+                            <optgroup label="<?= htmlspecialchars($groupLabel) ?>">
+                                <?php foreach ($options as $option) {
+                                    if ($option === strtolower($lang)) continue; ?>
+                                    <option value="<?= $option ?>"><?= htmlspecialchars($langLabels[$option] ?? $option) ?></option>
+                                <?php } ?>
+                            </optgroup>
                         <?php } ?>
                     </select>
 
@@ -173,21 +221,52 @@ require 'tools/header.php';
         var themeToggle = document.querySelector('[data-theme-toggle]');
         if (themeToggle) themeToggle.addEventListener('click', pickTheme);
 
+        // the bundled grammars stop at the 36 "common" languages, so the rest
+        // arrive one file at a time from the same release the core came from
+        var GRAMMAR_URL = 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.2/build/languages/';
+        var loading = {};
+
+        function loadGrammar(lang, done) {
+            if (typeof hljs === 'undefined' || hljs.getLanguage(lang)) return false;
+            // select.value can come from a stored snippet, so only plain grammar
+            // names are ever allowed to become part of a request path
+            if (loading[lang] || !/^[a-z0-9][a-z0-9.-]*$/i.test(lang)) return false;
+            loading[lang] = true;
+            var script = document.createElement('script');
+            script.src = GRAMMAR_URL + lang + '.min.js';
+            script.onload = script.onerror = function () {
+                script.parentNode.removeChild(script);
+                delete loading[lang];
+                done();
+            };
+            document.head.appendChild(script);
+            return true;
+        }
+
         function paint() {
             if (typeof hljs === 'undefined' || !block) return;
             var lang = select.value;
-            block.className = 'language-' + lang;
+            // hljs reads textContent anyway, but warns about "unescaped HTML" while
+            // the spans of the previous run are still children of the element
+            block.textContent = block.textContent;
+            block.className = 'language-' + lang; // also drops the hljs class
             block.removeAttribute('data-highlighted');
-            if (lang === 'plaintext' || !hljs.getLanguage(lang)) {
-                block.textContent = block.textContent; // leave as plain text
-                block.classList.remove('hljs');
+            if (lang === 'plaintext') {
+                return; // leave as plain text
+            }
+            if (!hljs.getLanguage(lang)) {
+                // repaint only once the grammar really landed, otherwise a name with
+                // no file on the CDN would fetch itself in a loop
+                loadGrammar(lang, function () {
+                    if (select.value === lang && hljs.getLanguage(lang)) paint();
+                });
                 return;
             }
             hljs.highlightElement(block);
         }
 
         select.addEventListener('change', paint);
-        if (typeof hljs !== 'undefined' && block) hljs.highlightElement(block);
+        paint();
 
         function flash(btn, ok) {
             btn.textContent = ok ? 'کپی شد ✓' : 'کپی ناموفق';
