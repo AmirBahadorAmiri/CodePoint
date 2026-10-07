@@ -39,6 +39,7 @@ A Persian (Farsi) code-snippet manager with a fully right-to-left interface — 
 - Dedicated `read.php?code_id=N` page with a sticky toolbar: snippet title, language override dropdown, **copy** and **copy with line numbers** buttons.
 - Line-number gutter that stays aligned with the highlighted code, and a horizontal scroll area for long lines.
 - Syntax highlighting via highlight.js 11.11.2, re-applied when you override the language. The editor wears GitHub's own syntax themes in both directions — `github` for light, `github-dark` for dark — and `tools/style.css` matches the toolbar, gutter and borders to each palette so the shell never looks bolted on.
+- Language picker with ~90 languages in six groups (markup, scripting, compiled, data & config, terminal & infra, other). The bundle only ships its 36 "common" grammars, so anything else is fetched as a standalone grammar file from the same release the first time you pick it — one small request, then the browser cache keeps it.
 - Sidebar with the snippet's metadata and full description.
 
 ### 🖱️ Right-click Menu
@@ -118,7 +119,7 @@ CodePoint/
 ```
 
 - **`index.php`** — entry point. Reads the search term and active language, builds the `WHERE` clause with escaped values, and renders the card list plus the filter sidebar. Also owns the right-click menu: one delegated `contextmenu` listener, one `click` listener, and a keyboard handler, so a single listener per event serves every card.
-- **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body. A missing snippet redirects to `index.php` instead of rendering a broken page.
+- **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body. A missing snippet redirects to `index.php` instead of rendering a broken page. It also owns the `$langGroups` catalog behind the language picker and the `loadGrammar()` helper that pulls a standalone grammar from `cdn-release` when the bundle does not carry it; the regex guard there is what keeps a stored `code_lang` from turning into an arbitrary request path.
 - **`api.php`** — form target for every write. `action` selects `insert`, `update`, `delete` or `import`; insert and update share the same validation (title, language, description and code all non-empty) and the same four escaped values. Delete takes only a `(int)` id. Import delegates to `tools/import.php`.
 - **`backup.php`** — the export. Reads every row, wraps it in a versioned envelope and sends it as a download with `Content-Disposition: attachment`. A `GET` is correct here: it only reads.
 - **`tools/import.php`** — included by `api.php` for the `import` action. Uses prepared statements (not the escape-then-interpolate path the other actions use), since the data arrives from an untrusted file. Validates the envelope, then merges each row by `code_id` inside a single transaction.
@@ -195,7 +196,7 @@ Start **Apache** and **MySQL** from the XAMPP control panel, then visit:
 http://localhost/CodePoint/
 ```
 
-> 🌐 The Vazirmatn font and highlight.js load from a CDN, so the first paint needs an internet connection. Layout, storage and copying all work offline.
+> 🌐 The Vazirmatn font and highlight.js load from a CDN, so the first paint needs an internet connection. Layout, storage and copying all work offline. A language outside the bundled 36 needs one extra CDN request the first time you pick it; until then that snippet just shows unhighlighted.
 
 ### 5. Verify your install
 
