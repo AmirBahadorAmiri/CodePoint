@@ -2,234 +2,60 @@
 
 > 📖 [نسخه فارسی](./README.fa.md)
 
-A Persian (Farsi) code-snippet manager with a fully right-to-left interface — store snippets, search them, browse them by language, read them with line numbers and syntax highlighting, and edit or delete them from a custom right-click menu. Light and dark themes, plain PHP + MySQL on Apache, no framework, no build step.
+A code-snippet manager with a right-to-left interface.
 
-![Screenshot of the snippet list page](./screenshot/screenshot.png)
+![The snippet list](./screenshot/screenshot.png)
 
-<p align="center">
-  <a href="#-features">Features</a> ·
-  <a href="#-project-structure">Project Structure</a> ·
-  <a href="#-requirements">Requirements</a> ·
-  <a href="#-contributing">Contributing</a>
-</p>
+`PHP 8.2` · `MySQL / MariaDB` · `Apache` · `highlight.js` · `Vazirmatn`
 
-![Platform](https://img.shields.io/badge/platform-XAMPP%20%2B%20Apache-f97316?style=flat-square)
-![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
-![Database](https://img.shields.io/badge/MySQL%20%2F%20MariaDB-10.4-003545?logo=mariadb&logoColor=white)
-![Syntax](https://img.shields.io/badge/syntax-highlight.js-11.9-563d7c?style=flat-square)
-![License](https://img.shields.io/badge/license-see%20repo-6b7280?style=flat-square)
-![Last Commit](https://img.shields.io/github/last-commit/AmirBahadorAmiri/CodePoint?style=flat-square&label=last%20commit)
+## Features
 
-## ✨ Features
+- Search by title, language or id, and filter by language with counts.
+- Viewer with line numbers, syntax highlighting, and copy with or without line numbers.
+- Right-click menu on every snippet: copy, edit, delete.
+- Light and dark themes.
+- JSON export and import. Import merges by `code_id` and never deletes.
+- Delete is a POST; queries are escaped and the import uses prepared statements.
 
-### 📚 Snippet Library
+## Install
 
-- Card list showing each snippet's title, language badge, a two-line clamped description, and metadata (id, character count, line count).
-- Empty-state panel when a search or filter matches nothing.
-- Relative-size metadata (bytes / KB) rendered LTR-safe, so `80 B` never flips to `B 80` in an RTL document.
+Needs PHP 8.0+ with `mysqli`, MySQL 5.7+ / MariaDB 10.4+, and Apache.
 
-### 🔍 Search & Filter
+**1.** Copy `CodePoint/` into your web root.
 
-- Search in three modes: by **title**, by **language**, or by **id** — chosen with a segmented control in the sidebar.
-- Language filter list built from a `GROUP BY` query, each entry showing how many snippets it holds.
-- Active search is preserved when you click a language filter, so filters compose instead of resetting each other.
-
-### 💬 Code Viewer
-
-- Dedicated `read.php?code_id=N` page with a sticky toolbar: snippet title, language override dropdown, **copy** and **copy with line numbers** buttons.
-- Line-number gutter that stays aligned with the highlighted code, and a horizontal scroll area for long lines.
-- Syntax highlighting via highlight.js 11.11.2, re-applied when you override the language. The editor wears GitHub's own syntax themes in both directions — `github` for light, `github-dark` for dark — and `tools/style.css` matches the toolbar, gutter and borders to each palette so the shell never looks bolted on.
-- Language picker with ~90 languages in six groups (markup, scripting, compiled, data & config, terminal & infra, other). The bundle only ships its 36 "common" grammars, so anything else is fetched as a standalone grammar file from the same release the first time you pick it — one small request, then the browser cache keeps it.
-- Sidebar with the snippet's metadata and full description.
-
-### 🖱️ Right-click Menu
-
-- Right-clicking any snippet card opens a custom menu — **copy**, **edit**, **delete** — instead of the browser's default one.
-- A per-card **"⋯" button** opens the same menu, so touch devices without a right-click get the same three actions.
-- Fully keyboard-driven: `↑`/`↓` to walk the items (wrapping around), `Home`/`End` to jump, `Esc` to dismiss. Dismissing returns focus to the button that opened it.
-- The menu is clamped inside the viewport and closes on `Esc`, an outside click, scroll or resize.
-- Edit reuses the "new snippet" dialog in an edit mode, with the title and button text switching to **ویرایش کد** / **ذخیره تغییرات**.
-- Delete asks for confirmation, then always returns to `index.php`.
-- The viewer page carries the same two actions as plain **ویرایش** / **حذف** buttons, so editing is reachable without going back to the list.
-
-### 💾 JSON Backup
-
-- **خروجی JSON** in the navbar downloads every snippet as a single file: `{ format, version, exported, count, snippets: [...] }`, with `code_id` kept on each row so the file can be merged back rather than blindly appended.
-- **ورود JSON** in the navbar picks a file, asks for confirmation, and reports the outcome in a toast: how many were added, how many updated, how many rows were rejected.
-- Import **merges by `code_id`** — an id that already exists gets updated, a new one gets inserted. **Nothing is ever deleted**, so importing an old backup cannot wipe newer snippets.
-- A row is skipped if any of its four fields is missing or empty; the count shows up in the toast so a partial import is never silent.
-- The whole batch runs in one transaction, so a failure part-way rolls the database back instead of leaving a half-imported table.
-- The export is a `GET` (it only reads); the import is a `POST` behind a file picker.
-
-### ⚙️ Interface
-
-- Fully right-to-left layout built with CSS **logical properties** (`margin-inline-*`, `padding-inline`, `border-inline-*`) rather than hard-coded left/right.
-- Hand-written design system in a single stylesheet — CSS custom properties for color, spacing, radius and shadows, with a documented class contract in the file header.
-- **Dark mode** from a navbar toggle: it follows the OS setting until you pick a side, then your choice survives every reload. The whole palette is one block of `light-dark()` pairs switched by `color-scheme`, so there is no second stylesheet to keep in sync.
-- The toggle ships both a sun and a moon icon and lets CSS reveal one, so the button is already correct on the very first paint — a stored theme is applied by a blocking script in `<head>`, and no flash of the wrong theme is possible.
-- The code viewer keeps its editor look in both themes and gains a border in dark mode so it stays separated from the page.
-- "New snippet" form lives in a native `<dialog>` modal, so the sidebar keeps its scroll room.
-- Responsive: two-column layout on desktop, stacked at `1024px`, toolbar wraps and code font shrinks at `640px`. Below `640px` the four navbar actions drop to a row of their own instead of pushing the page sideways.
-- Vazirmatn as the Persian UI font, falling back to `system-ui` / `Tahoma`.
-
-### 🔒 Safety
-
-- Every value is escaped with `SQLHelper::escape()` (`mysqli_real_escape_string`) before it reaches a query — no string interpolation into SQL.
-- All rendered values pass through `htmlspecialchars()`.
-- `code_id` is cast to `(int)`, so it can never carry SQL.
-- `SQLHelper` wraps connection and query calls in `try/catch` for `mysqli_sql_exception`, which PHP 8.1+ throws by default.
-- Delete is a **POST** through a hidden form, never a GET, so a snippet can never be removed by a crawled or prefetched link.
-- The `return_to` redirect target is whitelisted to `index|read`, so it cannot be turned into an open redirect.
-- **Import never deletes.** It merges by `code_id`, so restoring an older backup updates the rows it mentions and inserts the rest, and cannot remove a snippet that is newer than the file.
-- The imported file is untrusted input, so it goes through **prepared statements with bound parameters** rather than the escape-then-interpolate path the other actions use, and every field is checked for type and emptiness before it reaches a query.
-- The whole import runs in one transaction and rolls back on any failure, so a malformed row in the middle of a large file cannot leave the table half-written.
-- The code payload handed to the menu travels in a `data-` attribute with every character escaped and newlines normalised to `LF` before being entity-encoded — a literal `CR` inside an attribute value is rewritten by the HTML parser and would otherwise turn each `CRLF` into a blank line.
-
-## 🛠 Tech Stack
-
-| Layer | Tool |
-| --- | --- |
-| Language | PHP 8.2 |
-| Database | MySQL / MariaDB 10.4 (`utf8mb4_unicode_ci`, InnoDB) |
-| Web server | Apache via XAMPP |
-| DB access | `mysqli`, wrapped in `tools/SQLHelper.php` |
-| Syntax highlighting | highlight.js 11.11.2, `github` + `github-dark` themes |
-| Themes | `color-scheme` + one block of `light-dark()` pairs, no second stylesheet |
-| Font | Vazirmatn (CDN) |
-| Styling | Hand-written CSS design system, CSS logical properties |
-| Frontend | Vanilla JS, native `<dialog>` |
-| Tooling | `php -l` for linting, Playwright for visual QA |
-
-## 📁 Project Structure
-
-```text
-CodePoint/
-├── index.php               # Home: search, language filter, snippet card list, right-click menu
-├── read.php                # Viewer: line numbers, highlighting, copy + edit/delete buttons
-├── api.php                 # POST endpoint: insert / update / delete / import
-├── backup.php              # GET endpoint: exports every snippet as a JSON download
-├── database.sql            # Schema: CREATE DATABASE + CREATE TABLE codes (+ optional sample data)
-├── screenshot/
-│   └── screenshot.png      # Screenshot used in this README
-└── tools/
-    ├── SQLHelper.php       # DB layer: escape(), fetchAll(), fetchOne(), sendQuery()
-    ├── header.php          # Shared partial: <head>, no-flash theme script, navbar, dialogs, toasts
-    ├── import.php          # The `import` action: validates the uploaded JSON, merges by code_id
-    └── style.css           # Design system (tokens, light-dark() pairs, layout, components)
-```
-
-- **`index.php`** — entry point. Reads the search term and active language, builds the `WHERE` clause with escaped values, and renders the card list plus the filter sidebar. Also owns the right-click menu: one delegated `contextmenu` listener, one `click` listener, and a keyboard handler, so a single listener per event serves every card.
-- **`read.php`** — the code viewer. `fetchOne()` on `(int)$_GET['code_id']`, then toolbar, gutter and highlighted body. A missing snippet redirects to `index.php` instead of rendering a broken page. It also owns the `$langGroups` catalog behind the language picker and the `loadGrammar()` helper that pulls a standalone grammar from `cdn-release` when the bundle does not carry it; the regex guard there is what keeps a stored `code_lang` from turning into an arbitrary request path.
-- **`api.php`** — form target for every write. `action` selects `insert`, `update`, `delete` or `import`; insert and update share the same validation (title, language, description and code all non-empty) and the same four escaped values. Delete takes only a `(int)` id. Import delegates to `tools/import.php`.
-- **`backup.php`** — the export. Reads every row, wraps it in a versioned envelope and sends it as a download with `Content-Disposition: attachment`. A `GET` is correct here: it only reads.
-- **`tools/import.php`** — included by `api.php` for the `import` action. Uses prepared statements (not the escape-then-interpolate path the other actions use), since the data arrives from an untrusted file. Validates the envelope, then merges each row by `code_id` inside a single transaction.
-- **`tools/header.php`** — included by both pages. Set `$pageTitle` and `$activePage` before including it. Also holds the shared dialog, the hidden delete form, the hidden import form, the toast stack and `window.codePoint` (`openEditor`, `remove`, `copy`, `toast`, `clipboard`), so both pages drive the same editor.
-- **`tools/style.css`** — the whole palette lives in one `:root` block as `light-dark()` pairs, so a single `color-scheme` key decides which side of every pair is used. **The `--viewer-*` tokens are pinned to the two highlight.js themes** (`github` and `github-dark`); change one and you have to change the other.
-- **`tools/SQLHelper.php`** — holds the credentials and every query helper. **Edit the connection details here first.**
-
-## 🚀 Build & Run
-
-There is nothing to build — no Composer, no bundler. Copy the folder into your web root and create one table.
-
-### 1. Place the project
-
-Copy `CodePoint/` into XAMPP's `htdocs`:
-
-```bash
-# Windows
-xcopy /E /I CodePoint "C:\xampp\htdocs\CodePoint"
-```
-
-> 💡 If you keep the folder inside a `www` directory, adjust the URL in the next step — the URL mirrors the path **under the document root**, not your disk layout.
-
-### 2. Create the database
-
-The schema ships in [`database.sql`](./database.sql), so you can import it as-is. From the command line:
+**2.** Import the schema:
 
 ```bash
 mysql -u root -p < database.sql
 ```
 
-Or in phpMyAdmin (`http://localhost/phpmyadmin`): **Import → choose `database.sql` → Go**. The file is UTF-8, so Persian titles import correctly.
+or use `Import` in phpMyAdmin.
 
-It creates the `code_point` database, the `codes` table, and an index on `code_lang` for the language filter:
+**3.** Put your credentials at the top of `tools/SQLHelper.php` (defaults: `localhost`, `root`, empty, `code_point`).
 
-```sql
-CREATE DATABASE IF NOT EXISTS `code_point`
-    DEFAULT CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
+**4.** Start Apache and MySQL, then open `http://localhost/CodePoint/`.
 
-USE `code_point`;
+> ⚠️ `database.sql` drops the `codes` table, so importing it over an existing install erases your snippets.
 
-DROP TABLE IF EXISTS `codes`;
+The font and highlight.js load from a CDN; everything else works offline.
 
-CREATE TABLE `codes` (
-    `code_id`         INT AUTO_INCREMENT PRIMARY KEY,
-    `code_title`      VARCHAR(255) NOT NULL,
-    `code_text`       TEXT         NOT NULL,
-    `code_lang`       VARCHAR(100) NOT NULL,
-    `code_description` TEXT        NOT NULL,
-
-    -- the language filter lists every code_lang with its count
-    INDEX `idx_codes_lang` (`code_lang`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-> ⚠️ `database.sql` contains `DROP TABLE IF EXISTS codes` — importing it over an existing installation **erases your snippets**. It also ships three commented-out sample snippets right after the `CREATE TABLE`; uncomment that block if you want some data to look at.
-
-### 3. Point the app at your database
-
-Edit the connection details at the top of `tools/SQLHelper.php`:
-
-```php
-private $hostname = "localhost";
-private $username = "root";
-private $password = "";
-private $database_name = "code_point";
-```
-
-### 4. Start the services and open the app
-
-Start **Apache** and **MySQL** from the XAMPP control panel, then visit:
+## Structure
 
 ```text
-http://localhost/CodePoint/
+index.php        # list, search, language filter, right-click menu
+read.php         # viewer: line numbers, highlighting, copy
+api.php          # POST: insert / update / delete / import
+backup.php       # JSON export
+database.sql     # schema
+images/          # favicon
+screenshot/      # the screenshot above
+tools/
+  SQLHelper.php  # connection and query helpers  ← credentials here
+  header.php     # shared <head>, navbar, dialogs, toasts
+  import.php     # JSON import, merged by code_id
+  style.css      # styles
 ```
 
-> 🌐 The Vazirmatn font and highlight.js load from a CDN, so the first paint needs an internet connection. Layout, storage and copying all work offline. A language outside the bundled 36 needs one extra CDN request the first time you pick it; until then that snippet just shows unhighlighted.
+## License
 
-### 5. Verify your install
-
-```bash
-# Lint every PHP file
-for f in index.php read.php api.php tools/SQLHelper.php tools/header.php; do
-  php -l "$f"
-done
-```
-
-## 📋 Requirements
-
-- **PHP 8.0+** (developed and tested on 8.2). Needs the `mysqli` extension.
-- **MySQL 5.7+** or **MariaDB 10.4+** (tested on MariaDB 10.4.32).
-- **Apache** with a document root pointing at the folder that contains `CodePoint/`.
-- An internet connection only for the CDN assets — the app itself is fully functional offline.
-
-## 🤝 Contributing
-
-Pull requests are welcome. If you find a bug, please open an issue with:
-
-- what you did,
-- what you expected,
-- what happened instead,
-- your PHP and MySQL/MariaDB versions,
-- the browser you were using.
-
-> 🔒 Security notes are especially appreciated: this project stores user-supplied code and SQL, so any escaping or XSS finding is a high priority.
-
----
-
-<div align="center">
-
-Made with ❤️ by [AmirBahadorAmiri](https://github.com/AmirBahadorAmiri)
-
-</div>
+[GPL-3.0](./LICENSE)
