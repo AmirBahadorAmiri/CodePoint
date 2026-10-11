@@ -6,6 +6,14 @@
 
 ![فهرست کدها](./screenshot/screenshot.png)
 
+<div align="center">
+
+| روشن | تیره |
+| --- | --- |
+| <img src="./screenshot/screenshot_light.png" width="500" alt="نمایشگر کد در پوستهٔ روشن"> | <img src="./screenshot/screenshot_dark.png" width="500" alt="نمایشگر کد در پوستهٔ تیره"> |
+
+</div>
+
 `PHP 8.2` · `MySQL / MariaDB` · `Apache` · `highlight.js` · `Vazirmatn`
 
 ## امکانات

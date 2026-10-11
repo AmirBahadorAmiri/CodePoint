@@ -6,6 +6,14 @@ A code-snippet manager with a right-to-left interface.
 
 ![The snippet list](./screenshot/screenshot.png)
 
+<div align="center">
+
+| Light | Dark |
+| --- | --- |
+| <img src="./screenshot/screenshot_light.png" width="500" alt="The code viewer in the light theme"> | <img src="./screenshot/screenshot_dark.png" width="500" alt="The code viewer in the dark theme"> |
+
+</div>
+
 `PHP 8.2` · `MySQL / MariaDB` · `Apache` · `highlight.js` · `Vazirmatn`
 
 ## Features
