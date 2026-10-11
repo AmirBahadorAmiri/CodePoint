@@ -31,21 +31,25 @@ Navbar    : .navbar .navbar-inner .brand .brand-mark .brand-text
     /* one colour per line, light value first and dark value second. which of the
        two is used is decided by `color-scheme` alone (see the Theme block), so
        there is no second palette anywhere that could drift out of sync. */
-    --bg: light-dark(#f6f7f9, #0b1220);
-    --surface: light-dark(#ffffff, #131c2b);
-    --surface-alt: light-dark(#f9fafb, #1c2739);
+    --bg: light-dark(#f6f7f9, #0e1218);
+    --surface: light-dark(#ffffff, #171c23);
+    --surface-alt: light-dark(#f9fafb, #21262d);
     --border: light-dark(#e5e7eb, #243044);
     --border-strong: light-dark(#d1d5db, #33415a);
     --text: light-dark(#0f172a, #e2e8f0);
     --muted: light-dark(#64748b, #94a3b8);
     --faint: light-dark(#94a3b8, #7c8a9e);
-    --primary: light-dark(#2563eb, #60a5fa);
-    --primary-hover: light-dark(#1d4ed8, #93c5fd);
-    --primary-soft: light-dark(#eff6ff, rgba(96, 165, 250, .15));
+    --primary: light-dark(#2563eb, #f87272);
+    --primary-hover: light-dark(#1d4ed8, #fca5a5);
+    --primary-soft: light-dark(#eff6ff, rgba(248, 114, 114, .15));
     --success: light-dark(#16a34a, #4ade80);
     --danger: light-dark(#dc2626, #f87171);
     --danger-hover: light-dark(#b91c1c, #fca5a5);
     --danger-soft: light-dark(#fef2f2, rgba(248, 113, 113, .16));
+    /* one solid red for both themes: --danger above is tuned for the error toast
+       and the copy-failed button, which need a near-black foreground on a light fill */
+    --danger-fill: #dc2727;
+    --danger-fill-hover: #b91c1c;
     /* the dark accents are light colours, so white text on them would sit around
        2:1 — every solid fill needs this foreground instead of a hardcoded #fff */
     --on-accent: light-dark(#ffffff, #0b1220);
@@ -168,8 +172,8 @@ h1, h2, h3 { margin: 0; line-height: 1.35; font-weight: 700; }
 .btn-ghost { background: var(--surface); color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: var(--surface-alt); color: var(--text); text-decoration: none; }
 
-.btn-danger { background: var(--danger); color: var(--on-accent); }
-.btn-danger:hover { background: var(--danger-hover); text-decoration: none; }
+.btn-danger { background: var(--danger-fill); color: #ffffff; }
+.btn-danger:hover { background: var(--danger-fill-hover); text-decoration: none; }
 
 .btn-sm { padding: 5px 10px; font-size: 13px; }
 .btn.is-copied { background: var(--success); border-color: var(--success); color: var(--on-accent); }
@@ -398,7 +402,7 @@ textarea.field { resize: vertical; min-height: 120px; line-height: 1.7; }
     border-radius: 999px;
     background: var(--surface-alt); border: 1px solid var(--border); color: var(--muted);
 }
-.badge-lang { background: var(--primary-soft); border-color: light-dark(#dbeafe, rgba(96, 165, 250, .32)); color: var(--primary); text-transform: uppercase; letter-spacing: .03em; }
+.badge-lang { background: var(--primary-soft); border-color: light-dark(#dbeafe, rgba(248, 114, 114, .32)); color: var(--primary); text-transform: uppercase; letter-spacing: .03em; }
 .badge-title { font-size: 20px; }
 
 /* ---------- Code viewer ---------- */
