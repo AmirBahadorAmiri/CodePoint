@@ -1,0 +1,39 @@
+{
+    "manifest_version": 3,
+    "name": "CodePoint",
+    "version": "1.0.0",
+    "description": "مدیریت قطعه‌کدهای شخصی — کاملاً آفلاین و مستقل، بدون نیاز به سایت و دیتابیس.",
+    "minimum_chrome_version": "123",
+    "offline_enabled": true,
+    "icons": {
+        "16": "assets/icons/icon16.png",
+        "32": "assets/icons/icon32.png",
+        "48": "assets/icons/icon48.png",
+        "128": "assets/icons/icon128.png"
+    },
+    "action": {
+        "default_title": "باز کردن CodePoint",
+        "default_icon": {
+            "16": "assets/icons/icon16.png",
+            "32": "assets/icons/icon32.png",
+            "48": "assets/icons/icon48.png",
+            "128": "assets/icons/icon128.png"
+        }
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "permissions": [
+        "storage",
+        "unlimitedStorage",
+        "contextMenus"
+    ],
+    "commands": {
+        "open-codepoint": {
+            "suggested_key": {
+                "default": "Alt+Shift+K"
+            },
+            "description": "باز کردن CodePoint در یک تب"
+        }
+    }
+}

@@ -1,69 +1,84 @@
-# CodePoint
+<p align="center">
+  📄 Read in Persian: <a href="README.fa.md"><b>فارسی</b></a>
+</p>
 
-> 📖 [نسخه فارسی](./README.fa.md)
+<p align="center">
+  <img src="extension/assets/codepoint.png" width="400" title="CodePoint Logo">
+</p>
 
-A code-snippet manager with a right-to-left interface.
+# CodePoint (کدپوینت) 🧩
+### A fully offline code-snippet manager, right in your browser.
 
-![The snippet list](./screenshot/screenshot.png)
+**CodePoint** is a Chrome extension for managing personal code snippets — search, filter, view with syntax highlighting, and keep everything inside your own browser. It is the fully standalone successor of the CodePoint web app: no server, no database, no network at all.
 
-<div align="center">
+---
 
-| Light | Dark |
-| --- | --- |
-| <img src="./screenshot/screenshot_light.png" width="500" alt="The code viewer in the light theme"> | <img src="./screenshot/screenshot_dark.png" width="500" alt="The code viewer in the dark theme"> |
+## 🆕 What's New in v1.0.0 — From a Self-Hosted Site to a Standalone Extension
 
-</div>
+This release turns CodePoint from a PHP + MySQL web app into a browser extension:
 
-`PHP 8.2` · `MySQL / MariaDB` · `Apache` · `highlight.js` · `Vazirmatn`
+*   **No server, no setup:** the whole PHP + MySQL backend is replaced by `chrome.storage.local` — load the extension and you are done.
+*   **Truly offline:** highlight.js, its grammar files and the Vazirmatn font ship inside the package — nothing ever loads from a CDN.
+*   **Extension-native extras:** right-click any selected code on the web to save it into the editor, and open the app with the `Alt+Shift+K` shortcut.
 
-## Features
+---
 
-- Search by title, language or id, and filter by language with counts.
-- Viewer with line numbers, syntax highlighting, and copy with or without line numbers.
-- Right-click menu on every snippet: copy, edit, delete.
-- Light and dark themes.
-- JSON export and import. Import merges by `code_id` and never deletes.
-- Delete is a POST; queries are escaped and the import uses prepared statements.
+## 🌟 Key Features
 
-## Install
+### 📝 Snippet Management
+*   Add, edit and delete snippets through the same dialog as the site, with a delete confirmation.
+*   **Instant search by title, language or id,** plus a language filter with per-language counts that survives in the URL.
+*   Any change re-renders every open tab the moment it happens — no reloads.
 
-Needs PHP 8.0+ with `mysqli`, MySQL 5.7+ / MariaDB 10.4+, and Apache.
+### 👁 Code Viewer
+*   **Syntax highlighting that works offline:** highlight.js covers ~90 languages from files inside the extension; grammars load lazily from the package itself.
+*   Line-number gutter, per-snippet size / line / character stats, and a language picker to re-highlight on the fly.
+*   Copy with or without line numbers.
 
-**1.** Copy `CodePoint/` into your web root.
+### 🔒 Your Data, Your Browser
+*   Everything is stored in `chrome.storage.local` — no snippet ever leaves the browser.
+*   **JSON backup compatible with the old site:** export, or import a `codepoint-backup` file — rows merge by `code_id` and nothing is ever deleted.
+*   Light and dark themes that follow the system, switchable with one click.
 
-**2.** Import the schema:
+---
 
+## 🛠 Technologies Used
+
+CodePoint is developed with plain, framework-free tools and libraries:
+
+*   **Language:** Vanilla JavaScript and CSS — no framework, no build step
+*   **Platform:** Chrome Extension, Manifest V3 (service worker; requires Chrome 123+ for CSS `light-dark()`)
+*   **Storage:** `chrome.storage.local` with `unlimitedStorage` (stands in for MySQL; snippets live in the browser)
+*   **Syntax highlighting:** highlight.js 11.11.2 + 53 extra grammars, all vendored locally
+*   **UI:** RTL-first Persian interface, Vazirmatn font (vendored), GitHub Light/Dark highlighting themes
+
+---
+
+## 🚀 Installation & Run Guide
+
+1. First, clone the project from GitHub:
 ```bash
-mysql -u root -p < database.sql
+git clone https://github.com/AmirBahadorAmiri/CodePoint.git
 ```
+2. Open `chrome://extensions` in Chrome.
+3. Turn on **Developer mode** (top-right).
+4. Click **Load unpacked** and select the `extension/` folder.
+5. Click the CodePoint icon in the toolbar — the app opens in a full tab.
 
-or use `Import` in phpMyAdmin.
+---
 
-**3.** Put your credentials at the top of `tools/SQLHelper.php` (defaults: `localhost`, `root`, empty, `code_point`).
+## 📸 Screenshots
 
-**4.** Start Apache and MySQL, then open `http://localhost/CodePoint/`.
+Captured from the extension itself in both themes; the interface is right-to-left.
 
-> ⚠️ `database.sql` drops the `codes` table, so importing it over an existing install erases your snippets.
+| 📋 Snippet List | 🌙 Dark Theme | 👁 Viewer | 🌙 Viewer (Dark) |
+|:---:|:---:|:---:|:---:|
+| <img width="320" height="221" alt="The snippet list with search, language filter and cards in the light theme" src="screenshot/screenshot_light.png" /> | <img width="320" height="221" alt="The snippet list in the dark theme" src="screenshot/screenshot_dark.png" /> | <img width="320" height="221" alt="The code viewer with line numbers and syntax highlighting in the light theme" src="screenshot/screenshot_viewer_light.png" /> | <img width="320" height="221" alt="The code viewer in the dark theme" src="screenshot/screenshot_viewer_dark.png" /> |
 
-The font and highlight.js load from a CDN; everything else works offline.
+---
 
-## Structure
+## 👨‍💻 Developer
+Developed by **Amir Bahador Amiri**
 
-```text
-index.php        # list, search, language filter, right-click menu
-read.php         # viewer: line numbers, highlighting, copy
-api.php          # POST: insert / update / delete / import
-backup.php       # JSON export
-database.sql     # schema
-images/          # favicon
-screenshot/      # the screenshot above
-tools/
-  SQLHelper.php  # connection and query helpers  ← credentials here
-  header.php     # shared <head>, navbar, dialogs, toasts
-  import.php     # JSON import, merged by code_id
-  style.css      # styles
-```
-
-## License
-
-[GPL-3.0](./LICENSE)
+> [!TIP]
+> Coming from the CodePoint website? Export its JSON backup and hit **Import JSON** in the extension — rows merge by `code_id`, so nothing duplicates and nothing is lost.

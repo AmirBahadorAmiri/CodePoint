@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کد | CodePoint</title>
+
+    <script src="shared/theme-boot.js"></script>
+
+    <link rel="shortcut icon" href="assets/codepoint.png" type="image/x-icon">
+    <link rel="stylesheet" href="shared/fonts.css">
+    <link rel="stylesheet" href="shared/style.css">
+    <!-- GitHub's own syntax themes, vendored from highlight.js. Both links ship in
+         the markup and pickTheme() toggles them with media="not all", which is
+         the only thing that actually disables a stylesheet. -->
+    <link rel="stylesheet" id="hljs-light-theme" href="vendor/hljs/styles/github.min.css">
+    <link rel="stylesheet" id="hljs-dark-theme" media="not all" href="vendor/hljs/styles/github-dark.min.css">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="navbar-inner">
+
+        <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="8" y="2" width="8" height="4" rx="1"></rect>
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <path d="M9 12h6M9 16h4"></path>
+                </svg>
+            </span>
+            <span class="brand-text">CodePoint</span>
+        </a>
+
+        <nav class="nav-links" aria-label="ناوبری اصلی">
+            <a class="nav-link" href="index.html">خانه</a>
+            <a class="nav-link is-active" href="index.html">کدها</a>
+        </nav>
+
+        <div class="navbar-actions">
+            <button type="button" class="btn btn-ghost btn-sm" data-export-json
+                    title="خروجی گرفتن از همه کدها به صورت JSON">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3v12m0 0 4-4m-4 4-4-4"></path>
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                </svg>
+                خروجی JSON
+            </button>
+
+            <button type="button" class="btn btn-ghost btn-sm" data-open-import
+                    title="بازگردانی از فایل JSON">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 15V3m0 0 4 4m-4-4L8 7"></path>
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                </svg>
+                ورود JSON
+            </button>
+
+            <button type="button" class="icon-btn theme-toggle" data-theme-toggle
+                    aria-label="تغییر پوسته روشن و تیره" title="تغییر پوسته">
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"></path>
+                </svg>
+            </button>
+
+            <button type="button" class="btn btn-primary btn-sm" data-open-code-dialog>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                ثبت کد جدید
+            </button>
+        </div>
+
+    </div>
+</header>
+
+<div class="layout">
+
+    <!-- ================= Sidebar ================= -->
+    <aside class="sidebar">
+        <section class="panel sidebar-section">
+            <h2 class="sidebar-title">جزئیات</h2>
+            <div class="meta-list" id="meta-list"></div>
+        </section>
+
+        <section class="panel sidebar-section">
+            <h2 class="sidebar-title">درباره این کد</h2>
+            <p class="sidebar-text" id="about-text"></p>
+        </section>
+    </aside>
+
+    <!-- ================= Main ================= -->
+    <main class="main">
+        <nav class="breadcrumb" aria-label="مسیر">
+            <a href="index.html">خانه</a>
+            <span class="sep">/</span>
+            <span id="breadcrumb-title"></span>
+        </nav>
+
+        <div class="page-head">
+            <div>
+                <h1 class="badge-title" id="page-title"></h1>
+                <p id="page-desc"></p>
+            </div>
+            <div class="page-head-actions">
+                <button type="button" class="btn btn-ghost btn-sm" id="edit-code-btn">ویرایش</button>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-code-btn">حذف</button>
+                <a class="btn btn-ghost btn-sm" href="index.html">بازگشت به لیست</a>
+            </div>
+        </div>
+
+        <section class="code-shell">
+
+            <div class="code-toolbar">
+                <div class="code-toolbar-title">
+                    <span class="badge badge-lang" id="toolbar-lang"></span>
+                    <span id="toolbar-title"></span>
+                </div>
+
+                <div class="code-toolbar-actions">
+                    <label class="sr-only" for="lang-select">زبان کد</label>
+                    <select id="lang-select" class="field field-dark" dir="ltr" title="زبان کد"></select>
+
+                    <button type="button" class="btn btn-ghost btn-sm" id="copy-btn"
+                            data-label="کپی">
+                        کپی
+                    </button>
+
+                    <button type="button" class="btn btn-ghost btn-sm" id="copy-lines-btn"
+                            data-label="کپی با شماره خط">
+                        کپی با شماره خط
+                    </button>
+                </div>
+            </div>
+
+            <div class="code-scroll">
+                <div class="code-gutter" id="code-gutter" aria-hidden="true"></div>
+                <pre class="code-body"><code id="code-block"></code></pre>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="shared/store.js"></script>
+<script src="shared/ui.js"></script>
+<script src="shared/languages.js"></script>
+<script src="vendor/hljs/highlight.min.js"></script>
+<script src="viewer.js"></script>
+</body>
+</html>

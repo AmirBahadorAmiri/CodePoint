@@ -4,3 +4,6 @@
 .codegraph/
 .omo/
 .playwright-mcp/
+
+# Task reports
+.report/
