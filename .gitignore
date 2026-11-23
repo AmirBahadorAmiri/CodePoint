@@ -1,9 +1,2 @@
 .idea/
-
-# Local agent / tooling artifacts
-.codegraph/
-.omo/
-.playwright-mcp/
-
-# Task reports
 .report/
